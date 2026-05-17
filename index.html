@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>独库公路 · 深度地理系统 | 权威知识库 + 大剖面 + 智能体</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Roboto, sans-serif; }
+        body { background: linear-gradient(145deg, #e2f0df 0%, #c2ddbc 100%); padding: 1rem; min-height: 100vh; }
+        .dashboard { max-width: 1600px; margin: 0 auto; background: rgba(255,255,255,0.96); border-radius: 2rem; box-shadow: 0 25px 40px rgba(0,20,0,0.2); overflow: hidden; }
+        .hero { background: linear-gradient(125deg, #0f4229, #227a49); padding: 1rem 2rem; color: white; }
+        .hero h1 { font-size: 1.7rem; display: flex; align-items: center; gap: 12px; }
+        .hero p { font-size: 0.85rem; opacity: 0.85; margin-top: 0.2rem; }
+        .badge-group { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: 0.6rem; }
+        .badge { background: #f3bc6c; color: #1e4a2f; padding: 0.2rem 0.9rem; border-radius: 30px; font-size: 0.7rem; font-weight: bold; }
+        .main-layout { display: flex; flex-wrap: wrap; gap: 1.2rem; padding: 1.5rem; }
+        .profile-section { flex: 2.2; min-width: 580px; background: white; border-radius: 1.5rem; padding: 1.2rem; box-shadow: 0 6px 14px rgba(0,0,0,0.05); }
+        .info-section { flex: 1.2; min-width: 380px; display: flex; flex-direction: column; gap: 1rem; }
+        .card-title { font-weight: 700; font-size: 1rem; color: #1f5e3a; border-left: 5px solid #3b8c5a; padding-left: 10px; margin-bottom: 0.6rem; display: flex; align-items: center; gap: 6px; }
+        .chart-container { width: 100%; overflow-x: auto; margin-bottom: 0.5rem; }
+        canvas#profileCanvas { display: block; width: 1100px; height: auto; background: #ffffff; border-radius: 0.8rem; }
+        .slider-block { margin-top: 1rem; background: #f2f8ee; border-radius: 2rem; padding: 0.6rem 1rem; }
+        input[type="range"] { width: 100%; height: 5px; background: #c0d6b2; border-radius: 10px; }
+        .mile-labels { display: flex; justify-content: space-between; font-size: 0.7rem; margin-top: 6px; color: #3a6847; }
+        .legend-tags { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 1rem; font-size: 0.7rem; }
+        .legend-tags span { background: #eaf3e2; padding: 0.2rem 0.7rem; border-radius: 20px; }
+        .info-card { background: #fefaf0; border-radius: 1.3rem; padding: 0.8rem; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        .veg-name { font-size: 1.2rem; font-weight: 800; color: #227a49; margin: 0.2rem 0; }
+        .elev-value { font-size: 1.3rem; font-weight: 800; color: #2a6e3f; }
+        .economic-desc, .geo-desc { background: #fef5e3; border-left: 4px solid #e67e22; padding: 0.6rem; border-radius: 1rem; margin-top: 0.5rem; font-size: 0.8rem; line-height: 1.4; }
+        .geo-desc { border-left-color: #3b8c5a; background: #eef3e8; }
+        .warning-tag { background: #fff1e0; border-left: 4px solid #e67e22; padding: 0.5rem; border-radius: 1rem; font-size: 0.75rem; margin-top: 0.4rem; }
+        .flex-between { display: flex; justify-content: space-between; align-items: center; }
+        .btn-sm { background: #e8ddc5; color: #2c5a2e; padding: 0.2rem 0.8rem; border-radius: 40px; font-size: 0.7rem; cursor: pointer; border: none; }
+        .quick-spots { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0.5rem 0; }
+        .spot-btn { background: #eef3e8; padding: 0.2rem 0.8rem; border-radius: 30px; font-size: 0.7rem; cursor: pointer; transition: 0.1s; }
+        .spot-btn:hover { background: #d4e6ca; }
+        .chat-area { background: white; border-radius: 1.3rem; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        .chat-header { background: #e8ddc5; padding: 8px 12px; font-weight: bold; font-size: 0.85rem; display: flex; align-items: center; justify-content: space-between; }
+        .chat-messages { height: 260px; overflow-y: auto; padding: 8px; font-size: 0.8rem; display: flex; flex-direction: column; gap: 6px; background: #ffffffd9; }
+        .message { display: flex; gap: 6px; align-items: flex-start; }
+        .user-msg { justify-content: flex-end; }
+        .user-msg .bubble { background: #227a49; color: white; border-radius: 18px 18px 4px 18px; padding: 5px 10px; }
+        .ai-msg .bubble { background: #f1f1ef; border-left: 3px solid #e67e22; border-radius: 18px 18px 18px 4px; padding: 5px 10px; }
+        .avatar { width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.65rem; background: #d9e3d1; }
+        .input-group { display: flex; gap: 6px; padding: 8px; border-top: 1px solid #e0ebd8; background: white; }
+        #questionInput { flex: 1; border: 1px solid #c8ddbb; border-radius: 40px; padding: 6px 12px; font-size: 0.8rem; outline: none; }
+        button { background: #368a58; border: none; color: white; border-radius: 40px; padding: 0 1rem; font-weight: bold; cursor: pointer; }
+        button:hover { background: #1d6b41; }
+        .quick-questions { background: #eef3e8; border-radius: 0.8rem; padding: 6px 8px; margin-bottom: 8px; font-size: 0.65rem; display: flex; flex-wrap: wrap; gap: 5px; }
+        .quick-tag { background: white; padding: 2px 8px; border-radius: 20px; cursor: pointer; }
+        .quick-tag:hover { background: #e2e8d5; }
+        hr { margin: 8px 0; border-color: #e0ecd9; }
+        footer { font-size: 0.7rem; text-align: center; padding: 0.7rem; background: #e2ecd9; color: #2a5a3a; }
+        .coord-row { font-family: monospace; background: #eef3e8; padding: 2px 6px; border-radius: 20px; display: inline-block; font-size: 0.75rem; }
+        .plan-tool { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; margin-top: 6px; }
+        .plan-input { width: 70px; padding: 4px; border-radius: 20px; border: 1px solid #bdd6af; text-align: center; }
+        @media (max-width: 900px) { .main-layout { flex-direction: column; } .profile-section { min-width: auto; } }
+    </style>
+</head>
+<body>
+<div class="dashboard">
+    <div class="hero">
+        <h1><i class="fas fa-mountain-sun"></i> 独库公路 · 权威地理系统</h1>
+        <p>横屏大剖面 | 地质/气候/水文 | 垂直植被带 | 高反预警 | 科学智能体</p>
+        <div class="badge-group">
+            <span class="badge"><i class="fas fa-chart-line"></i> 高精度剖面</span>
+            <span class="badge"><i class="fas fa-leaf"></i> 植被带谱</span>
+            <span class="badge"><i class="fas fa-water"></i> 天山冰川水系</span>
+            <span class="badge"><i class="fas fa-book-open"></i> 权威知识库</span>
+            <span class="badge"><i class="fas fa-robot"></i> 科学智能体</span>
+        </div>
+    </div>
+
+    <div class="main-layout">
+        <!-- 左侧大剖面 -->
+        <div class="profile-section">
+            <div class="card-title"><i class="fas fa-chart-line"></i> 独库公路海拔剖面 (独山子→库车) 横屏宽幅</div>
+            <div class="chart-container" style="overflow-x: auto;">
+                <canvas id="profileCanvas" width="1100" height="360" style="min-width: 1000px; width: 100%; height: auto;"></canvas>
+            </div>
+            <div class="slider-block">
+                <div class="flex-between" style="margin-bottom: 6px;">
+                    <span><i class="fas fa-road"></i> 当前里程: <strong id="curDistLabel">125</strong> km</span>
+                    <span><i class="fas fa-water"></i> 海拔: <strong id="curAltLabel">--</strong> m</span>
+                    <span id="oxygenHint" style="font-size:0.7rem; background:#fce4d6; padding:2px 8px; border-radius:20px;"><i class="fas fa-lungs"></i> 含氧量 --%</span>
+                </div>
+                <input type="range" id="distanceSlider" min="0" max="360" step="1" value="125">
+                <div class="mile-labels">
+                    <span>0 独山子</span><span>110 哈希勒根</span><span>190 玉希莫勒盖</span><span>320 铁力买提</span><span>360 库车</span>
+                </div>
+            </div>
+            <div class="legend-tags">
+                <span><i class="fas fa-tree"></i> <1300m荒漠草原</span><span>1300-1800m山地草原</span><span>1800-2700m针叶林带</span>
+                <span>2700-3300m高山草甸</span><span>>3300m冰缘带</span><span><i class="fas fa-flag-checkered"></i> 哈希勒根3400</span>
+                <span><i class="fas fa-flag-checkered"></i> 玉希莫勒盖3200</span><span><i class="fas fa-flag-checkered"></i> 铁力买提3200</span>
+            </div>
+            <div class="status-msg" style="font-size:0.7rem; margin-top: 10px; text-align:center; background:#eef3e8; border-radius: 2rem; padding:4px;">
+                <i class="fas fa-hand-pointer"></i> 点击剖面图任意点 → 右侧信息同步，智能体感知位置
+            </div>
+        </div>
+
+        <!-- 右侧多功能区 -->
+        <div class="info-section">
+            <!-- 基础情报 -->
+            <div class="info-card">
+                <div class="flex-between"><span><i class="fas fa-info-circle"></i> <strong>📍 当前点位综合情报</strong></span>
+                    <span class="btn-sm" id="shareBtn"><i class="fas fa-share-alt"></i> 分享点位</span>
+                </div>
+                <hr>
+                <div><i class="fas fa-leaf"></i> <strong>植被类型</strong><br><span id="vegType" class="veg-name">—</span></div>
+                <div id="vegDescription" style="font-size:0.75rem;">点击剖面或滑动里程</div>
+                <div class="flex-between" style="margin-top: 6px;">
+                    <span><i class="fas fa-ruler-vertical"></i> 海拔 <span id="currentElevation" class="elev-value">--</span> m</span>
+                    <span><i class="fas fa-road"></i> 里程 <strong id="currentDistance">--</span> km</span>
+                </div>
+                <div><i class="fas fa-globe-asia"></i> 坐标 (WGS84)<br><span id="coordDisplay" class="coord-row">纬度: -- 经度: --</span></div>
+                
+                <!-- 权威地理特征 -->
+                <div class="geo-desc" id="geoFeature">
+                    <i class="fas fa-mountain"></i> <strong>地理特征 (地质/气候/水系)</strong><br>
+                    <span id="geoText">加载中...</span>
+                </div>
+
+                <div class="economic-desc" id="economicCard">
+                    <i class="fas fa-landmark"></i> <strong>经济人文</strong><br>
+                    <span id="economicText">选择点位获取...</span>
+                </div>
+
+                <div class="warning-tag" id="weatherAlert">
+                    <i class="fas fa-cloud-sun-rain"></i> <strong>天气/路况提示</strong><br>
+                    <span id="weatherText">加载中...</span>
+                </div>
+            </div>
+
+            <!-- 地理标志快捷入口 -->
+            <div class="info-card">
+                <div class="card-title"><i class="fas fa-star"></i> 权威地理标志</div>
+                <div class="quick-spots" id="spotList">
+                    <span class="spot-btn" data-spot="哈希勒根达坂">🏔️ 哈希勒根</span>
+                    <span class="spot-btn" data-spot="乔尔玛">🕊️ 乔尔玛</span>
+                    <span class="spot-btn" data-spot="那拉提草原">🌿 那拉提</span>
+                    <span class="spot-btn" data-spot="巴音布鲁克">🦢 巴音布鲁克</span>
+                    <span class="spot-btn" data-spot="大小龙池">💧 大小龙池</span>
+                    <span class="spot-btn" data-spot="库车大峡谷">🏜️ 库车大峡谷</span>
+                </div>
+                <div id="spotDesc" style="font-size:0.75rem; color:#5a6e4a; margin-top: 6px;">点击景点，获取基于权威文献的地理详解</div>
+            </div>
+
+            <!-- 里程规划 -->
+            <div class="info-card">
+                <div class="card-title"><i class="fas fa-route"></i> 自驾里程规划</div>
+                <div class="plan-tool">
+                    <span>起点(km):</span><input type="number" id="planStart" class="plan-input" value="0" min="0" max="360" step="10">
+                    <span>终点(km):</span><input type="number" id="planEnd" class="plan-input" value="360" min="0" max="360" step="10">
+                    <button id="calcPlan" style="padding:4px 12px;">估算</button>
+                </div>
+                <div id="planResult" style="font-size:0.75rem; margin-top: 6px;">预计行驶时间: -- 小时，油耗约 -- L</div>
+            </div>
+
+            <!-- 科学智能体 -->
+            <div class="chat-area">
+                <div class="chat-header">
+                    <span><i class="fas fa-robot"></i> 权威地理智能体</span>
+                    <span style="font-size:0.65rem;">📚 基于天山自然地理文献</span>
+                </div>
+                <div class="quick-questions" id="quickQuestions">
+                    <span class="quick-tag">哈希勒根冰川成因</span>
+                    <span class="quick-tag">那拉提为什么是草原？</span>
+                    <span class="quick-tag">巴音布鲁克湿地水文</span>
+                    <span class="quick-tag">独库公路地质构造带</span>
+                    <span class="quick-tag">垂直植被带原理</span>
+                    <span class="quick-tag">铁力买提达坂气候</span>
+                </div>
+                <div class="chat-messages" id="chatMessages">
+                    <div class="message ai-msg">
+                        <div class="avatar"><i class="fas fa-brain"></i></div>
+                        <div class="bubble">✨ 科学模式已启动！基于《天山自然地理》《中国天山地质志》等权威文献。当前里程 <span id="aiContextDist">125</span> km，问我任何地理问题，我会解释原理与现象。</div>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <input type="text" id="questionInput" placeholder="例如：天山雪岭云杉为什么分布在特定海拔？">
+                    <button id="askBtn"><i class="fas fa-paper-plane"></i> 提问</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <footer>
+        📖 知识来源：中国科学院天山冰川站研究成果、《天山垂直带谱》、《中国天山地质图（1:50万）》等。解释力求真实、科学。
+    </footer>
+</div>
+
+<script>
+    // ======================= 1. 海拔模型 (基于真实控制点) =======================
+    const waypoints = [
+        { dist: 0, alt: 750 }, { dist: 30, alt: 1450 }, { dist: 60, alt: 1950 },
+        { dist: 80, alt: 2400 }, { dist: 110, alt: 3400 }, { dist: 120, alt: 3050 },
+        { dist: 135, alt: 2600 }, { dist: 150, alt: 2200 }, { dist: 170, alt: 2650 },
+        { dist: 190, alt: 3200 }, { dist: 205, alt: 2350 }, { dist: 220, alt: 1850 },
+        { dist: 240, alt: 2250 }, { dist: 260, alt: 2700 }, { dist: 280, alt: 2550 },
+        { dist: 300, alt: 2850 }, { dist: 320, alt: 3200 }, { dist: 335, alt: 2100 },
+        { dist: 345, alt: 1500 }, { dist: 360, alt: 1100 }
+    ];
+    function getAltitudeByDistance(dist) {
+        if (dist <= waypoints[0].dist) return waypoints[0].alt;
+        if (dist >= waypoints[waypoints.length-1].dist) return waypoints[waypoints.length-1].alt;
+        for (let i=0; i<waypoints.length-1; i++) {
+            if (dist >= waypoints[i].dist && dist <= waypoints[i+1].dist) {
+                const t = (dist - waypoints[i].dist) / (waypoints[i+1].dist - waypoints[i].dist);
+                return waypoints[i].alt + t * (waypoints[i+1].alt - waypoints[i].alt);
+            }
+        }
+        return 1800;
+    }
+    const stepPlot = 1;
+    const distsPlot = [], altsPlot = [];
+    for (let d=0; d<=360; d+=stepPlot) { distsPlot.push(d); altsPlot.push(getAltitudeByDistance(d)); }
+    if (distsPlot[distsPlot.length-1] !== 360) { distsPlot.push(360); altsPlot.push(getAltitudeByDistance(360)); }
+    
+    // 植被判读 (带科学解释)
+    function getVegetationByAltitude(alt) {
+        if (alt < 1300) return { name: "温带荒漠草原带", desc: "降水<200mm，蒸发强烈，植被以梭梭、驼绒藜为主，土壤为灰棕漠土。" };
+        if (alt < 1800) return { name: "山地草原带", desc: "降水300-400mm，针茅、羊茅建群，黑钙土，典型夏牧场。" };
+        if (alt < 2700) return { name: "山地针叶林带 (雪岭云杉)", desc: "降水500-700mm，雪岭云杉纯林，灰褐色森林土，涵养水源。" };
+        if (alt < 3300) return { name: "亚高山/高山草甸带", desc: "降水>700mm，嵩草、苔草，高山草甸土，花期7-8月。" };
+        return { name: "高山冰缘/流石滩带", desc: "年均温<-5℃，物理风化强烈，稀疏植被，雪莲、红景天。" };
+    }
+    
+    // 经纬度
+    const coordPoints = [
+        { dist: 0, lat: 44.315, lon: 84.832 }, { dist: 110, lat: 43.435, lon: 84.552 },
+        { dist: 150, lat: 43.690, lon: 84.310 }, { dist: 220, lat: 43.395, lon: 83.980 },
+        { dist: 280, lat: 42.880, lon: 83.720 }, { dist: 320, lat: 42.200, lon: 83.110 },
+        { dist: 360, lat: 41.718, lon: 82.920 }
+    ];
+    function getLonLat(dist) {
+        if (dist <= coordPoints[0].dist) return coordPoints[0];
+        for (let i=0; i<coordPoints.length-1; i++) {
+            if (dist >= coordPoints[i].dist && dist <= coordPoints[i+1].dist) {
+                const t = (dist - coordPoints[i].dist) / (coordPoints[i+1].dist - coordPoints[i].dist);
+                return { lat: coordPoints[i].lat + t*(coordPoints[i+1].lat - coordPoints[i].lat),
+                         lon: coordPoints[i].lon + t*(coordPoints[i+1].lon - coordPoints[i].lon) };
+            }
+        }
+        return coordPoints[coordPoints.length-1];
+    }
+    
+    // ======================= 2. 权威地理特征库 (基于文献) =======================
+    const geoDB = [
+        { range: [0,30], text: "【地质】天山北麓前山带，古近系红色砾岩，逆冲推覆构造发育。气候：温带干旱区，年降水150mm。水系：奎屯河，源自天山冰川，径流补给以融雪为主。" },
+        { range: [30,80], text: "【地质】北天山华力西期花岗岩，岩体裂隙发育，易形成瀑布。气候：中山带，年降水400mm。水系：乌兰萨德克河，陡坡段水能丰富。" },
+        { range: [80,110], text: "【地质】哈希勒根隆起带，石炭系火山碎屑岩，冰川槽谷与冰碛垄典型。气候：高山寒带，年均温-4℃。水系：冰川融水为开都河源头。" },
+        { range: [110,125], text: "【地质】哈希勒根达坂，第四纪冰斗和U形谷，永久冻土分布。气候：高山冰缘，雪线海拔3700m。现象：含氧量仅60%，易发雪崩。" },
+        { range: [125,150], text: "【地质】乔尔玛断裂带，喀什河沿断裂发育，河谷深切。气候：温带半湿润。水系：喀什河，年均径流量12亿m³。" },
+        { range: [150,180], text: "【地质】伊犁-中天山板块缝合带，志留系变质岩。气候：山地湿润区，年降水600mm。植被：针阔混交林。" },
+        { range: [180,210], text: "【地质】玉希莫勒盖隆起，二叠系花岗岩，山脊锯齿状。气候：亚高山湿润，降水500-700mm。冰川作用遗迹。" },
+        { range: [210,235], text: "【地质】那拉提山间盆地，第四纪洪积物，土壤肥沃。气候：温带半湿润，年降水500mm。水系：巩乃斯河，草原灌溉水源。" },
+        { range: [235,265], text: "【地质】拉尔敦达坂-巴音布鲁克中生代砂岩，盆地内发育沼泽。气候：高寒半干旱，年均温-4.5℃。水系：开都河曲流，湿地泥炭层厚2-5m。" },
+        { range: [265,295], text: "【地质】巴音布鲁克高平原，第四系湖相沉积，冻胀丘地貌。气候：高寒，无霜期不足30天。生态：天鹅湖，鸟类迁徙通道。" },
+        { range: [295,325], text: "【地质】铁力买提推覆体，古生代灰岩，溶蚀形成大小龙池。气候：垂直变化大，山口多大风。水系：库车河源头。" },
+        { range: [325,360], text: "【地质】库车凹陷，新生代红色砂泥岩，雅丹地貌发育。气候：暖温带极端干旱，年降水<80mm。水系：季节性河流，多为干沟。" }
+    ];
+    function getGeoFeature(dist) {
+        for (let g of geoDB) if (dist >= g.range[0] && dist <= g.range[1]) return g.text;
+        return "天山造山带，多期岩浆-构造活动，新生代隆升强烈。";
+    }
+    
+    // 经济人文库 (略)
+    const humanGeoDB = [
+        { range: [0,25], text: "独山子区：石油工业重镇，独库起点，独山子大峡谷，文旅融合。" },
+        { range: [25,60], text: "毛溜沟：老虎口险道，筑路英雄纪念碑，牧民旅游马队。" },
+        { range: [60,100], text: "乌兰萨德克：天瀑景观，高山草甸，蒙古族奶制品。" },
+        { range: [100,125], text: "哈希勒根达坂(3400m)：世界唯一防雪走廊，高山探险。" },
+        { range: [125,145], text: "乔尔玛烈士陵园：168位烈士长眠地，爱国主义教育基地。" },
+        { range: [145,180], text: "唐布拉百里画廊：牧民毡房民宿，旅游收入占比超40%。" },
+        { range: [180,210], text: "玉希莫勒盖达坂(3200m)：柯尔克孜族牧场体验。" },
+        { range: [210,235], text: "那拉提草原：5A景区，哈萨克族转场文化。" },
+        { range: [235,265], text: "拉尔敦-巴音布鲁克：土尔扈特东归文化，那达慕。" },
+        { range: [265,295], text: "巴音布鲁克天鹅湖：九曲十八弯，马产业。" },
+        { range: [295,325], text: "大小龙池-铁力买提：独库第一村康村。" },
+        { range: [325,360], text: "天山神秘大峡谷+库车王府，龟兹文化。" }
+    ];
+    function getHumanEconomicInfo(dist) {
+        for (let item of humanGeoDB) if (dist >= item.range[0] && dist <= item.range[1]) return item.text;
+        return "独库公路南北疆经济走廊，文旅融合。";
+    }
+    
+    // 氧气含量 (原理公式)
+    function getOxygenPercent(alt) {
+        let percent = 21 * Math.pow(0.9885, alt/100);
+        return Math.max(12, percent.toFixed(1));
+    }
+    
+    function getWeatherTraffic(dist) {
+        if (dist < 110) return "🌤️ 北段晴转多云，注意老虎口落石，气温8-20℃。";
+        if (dist < 125) return "❄️ 哈希勒根段零下5-5℃，可能有雪，防雪走廊通行正常，需防滑链。";
+        if (dist < 145) return "☁️ 乔尔玛多云5-15℃，牧家乐开放，烈士陵园参观人多。";
+        if (dist < 180) return "🌦️ 唐布拉偶有阵雨，草地湿滑，气温10-20℃。";
+        if (dist < 210) return "☀️ 玉希莫勒盖晴，高山草甸花开，气温8-18℃。";
+        if (dist < 235) return "🌤️ 那拉提晴转多云，游客多，建议早出发，气温12-25℃。";
+        if (dist < 295) return "🌧️ 巴音布鲁克午后风大，温差10℃以上，备厚衣。";
+        if (dist < 325) return "☀️ 大小龙池阳光好，达坂注意横风，气温5-15℃。";
+        return "☀️ 库车段干热，气温20-35℃，峡谷徒步凉爽。";
+    }
+    
+    // ======================= 3. 权威地理智能体知识库 (详细科学解释) =======================
+    const geoKnowledge = new Map();
+    function addGeoFact(keywords, answer) {
+        keywords.forEach(k => geoKnowledge.set(k.toLowerCase(), answer));
+    }
+    
+    // 依据权威文献构建的知识库
+    addGeoFact(["哈希勒根","冰川","成因"], "哈希勒根达坂发育第四纪冰川，由于海拔高（>3400m）且位于西风带迎风坡，年固态降水>800mm，雪线稳定在3700m左右。冰川运动塑造了U形谷、冰斗和侧碛垄。当前冰川处于退缩状态，年退缩速率约3-5m。");
+    addGeoFact(["那拉提","草原","成因"], "那拉提草原位于巩乃斯河谷地，受西风带水汽影响，年降水500mm。地形抬升形成山前降水带，加上黑钙土肥力高，适宜禾草生长。同时逆温层现象使得中海拔（1800-2400m）比谷底更湿润，形成优质草原。");
+    addGeoFact(["巴音布鲁克","湿地","九曲十八弯"], "巴音布鲁克盆地为中生代凹陷，地势平缓，开都河在此形成曲流。由于冻土和泥炭层阻水，排水不畅，形成大面积沼泽湿地。九曲十八弯是河流侧蚀和构造沉降共同作用的结果，日落时水面反光呈现“九个太阳”奇观。");
+    addGeoFact(["独库公路","地质构造","天山"], "独库公路横跨北天山、中天山、南天山三个构造单元，穿越伊犁-中天山板块缝合带。沿线出露古生界变质岩、华力西期花岗岩、中生界砂岩及新生界红层。公路近80%路段位于地震带，活跃断裂包括喀什河断裂、那拉提断裂等。");
+    addGeoFact(["铁力买提","达坂","气候"], "铁力买提达坂（3200m）是南北疆气候分界点。北坡受西风带影响，年降水600-700mm，阴坡有云杉林；南坡进入雨影区，年降水骤降至200mm以下，植被疏疏。达坂处盛行强风，瞬间风速可达8级。");
+    addGeoFact(["大小龙池","形成"], "大小龙池是由冰川堰塞和崩塌堆积共同形成的堰塞湖。大龙池水深约30m，湖水由冰川融水和岩溶泉水补给，水体清澈呈碧蓝色。湖周有冰碛物和石灰华沉积。");
+    addGeoFact(["垂直植被带","原理"], "天山植被垂直带谱受控于水热条件随海拔的变化。海拔每升高100m，气温下降0.6℃。在2500m以下，降水随海拔递增；2500m以上降水递减。因此形成：荒漠草原（<1300m）→山地草原（1300-1800）→针叶林（1800-2700）→高山草甸（2700-3300）→冰缘带（>3300）的完整序列。");
+    addGeoFact(["雪岭云杉","分布"], "雪岭云杉是天山特有种，适应寒冷湿润气候。主要分布在海拔1800-2700m的西风迎风坡，年降水需>500mm。其根系发达可固土，林下凋落物形成酸性森林土，涵养水源能力极强，是天山“固体水库”。");
+    addGeoFact(["奎屯河","水系"], "奎屯河发源于哈希勒根冰川，全长220km，年均径流量6.2亿m³。上游为冰川融水补给（占比60%），中游混合降水和融雪，下游灌溉奎屯-独山子垦区。");
+    addGeoFact(["开都河","巴音布鲁克"], "开都河发源于天山南坡，全长610km，在巴音布鲁克盆地形成大面积湿地，最终注入博斯腾湖。该河是塔里木河的重要源流，水质优良。");
+    
+    function getScientificAnswer(question, currentDist, currentAlt) {
+        let q = question.toLowerCase();
+        // 点位感知类
+        if (q.includes("当前海拔") || (q.includes("海拔") && (q.includes("这里")||q.includes("当前"))))
+            return `📍 当前里程 ${currentDist.toFixed(1)} km，海拔 ${Math.round(currentAlt)} m。氧气含量 ${getOxygenPercent(currentAlt)}%（随海拔升高，气压降低，氧分压下降）。植被为 ${getVegetationByAltitude(currentAlt).name}。`;
+        if (q.includes("当前植被") || q.includes("这里植被"))
+            return `🌿 ${getVegetationByAltitude(currentAlt).name}：${getVegetationByAltitude(currentAlt).desc}`;
+        if (q.includes("天气") || q.includes("路况")) return getWeatherTraffic(currentDist);
+        if (q.includes("地质") && !q.includes("构造")) return getGeoFeature(currentDist).split("【地质】")[1]?.split("气候")[0] || getGeoFeature(currentDist);
+        if (q.includes("气候")) return getGeoFeature(currentDist).match(/气候：[^。]+/)?.[0] || "天山气候垂直分异显著。";
+        if (q.includes("水系") || q.includes("河流") || q.includes("水")) return getGeoFeature(currentDist).match(/水系：[^。]+/)?.[0] || "独库公路跨越多条河流。";
+        
+        // 知识库匹配
+        for (let [key, val] of geoKnowledge.entries()) {
+            if (q.includes(key)) return val;
+        }
+        // 默认推荐
+        return "📖 我是地理智能体，我可以解释：冰川成因、植被带原理、地质构造、气候分异、水系特征等。试试问“哈希勒根冰川成因”或“垂直植被带原理”。";
+    }
+    
+    // ======================= 4. UI 联动 (与之前相同) =======================
+    let currentDistance = 125;
+    function updateAllUI(dist) {
+        const alt = getAltitudeByDistance(dist);
+        const veg = getVegetationByAltitude(alt);
+        const coords = getLonLat(dist);
+        const econo = getHumanEconomicInfo(dist);
+        const geo = getGeoFeature(dist);
+        document.getElementById('vegType').innerHTML = veg.name;
+        document.getElementById('vegDescription').innerHTML = veg.desc;
+        document.getElementById('currentElevation').innerHTML = Math.round(alt);
+        document.getElementById('currentDistance').innerHTML = dist.toFixed(1);
+        document.getElementById('coordDisplay').innerHTML = `纬度: ${coords.lat.toFixed(4)}° 经度: ${coords.lon.toFixed(4)}°`;
+        document.getElementById('economicText').innerHTML = econo;
+        document.getElementById('geoText').innerHTML = geo;
+        document.getElementById('curDistLabel').innerHTML = dist.toFixed(1);
+        document.getElementById('curAltLabel').innerHTML = Math.round(alt);
+        document.getElementById('aiContextDist').innerHTML = dist.toFixed(0);
+        document.getElementById('oxygenHint').innerHTML = `<i class="fas fa-lungs"></i> 含氧量 ${getOxygenPercent(alt)}%` + (alt>3000?" ⚠️注意高反":"");
+        document.getElementById('weatherText').innerHTML = getWeatherTraffic(dist);
+        const slider = document.getElementById('distanceSlider');
+        if (slider && Math.abs(slider.value - dist) > 0.2) slider.value = dist;
+    }
+    function refreshByDistance(dist) { currentDistance = Math.min(360, Math.max(0, dist)); updateAllUI(currentDistance); }
+    
+    // 2D图表
+    let chart2D = null;
+    function init2DChart() {
+        const canvas = document.getElementById('profileCanvas');
+        canvas.width = 1100; canvas.height = 360;
+        const ctx = canvas.getContext('2d');
+        if (chart2D) chart2D.destroy();
+        chart2D = new Chart(ctx, {
+            type: 'line',
+            data: { labels: distsPlot.map(d=>d.toFixed(0)), datasets: [{ label:'海拔 (m)', data: altsPlot, borderColor: '#e67e22', backgroundColor: 'rgba(230,126,34,0.08)', borderWidth: 2.5, pointRadius: 0.6, pointHoverRadius: 5, tension: 0.2, fill: true }] },
+            options: { responsive: true, maintainAspectRatio: true, plugins: { tooltip: { callbacks: { label: (ctx)=>`海拔: ${ctx.raw} m` } } }, scales: { y: { min:500, max:3600, title:{display:true, text:'海拔(m)'}, ticks:{stepSize:500} }, x: { title:{display:true, text:'里程(km)'}, ticks:{stepSize:40} } }, onClick: (e) => { const xVal = chart2D.scales.x.getValueForPixel(e.native?.offsetX || e.x); if(xVal!==undefined){ let closest = distsPlot.reduce((a,b)=>Math.abs(b-xVal)<Math.abs(a-xVal)?b:a); refreshByDistance(closest); } } }
+        });
+    }
+    
+    // 聊天
+    function setupChat() {
+        const askBtn = document.getElementById('askBtn'), input = document.getElementById('questionInput'), chatDiv = document.getElementById('chatMessages');
+        const addMsg = (text, isUser) => {
+            const div = document.createElement('div'); div.className = `message ${isUser ? 'user-msg' : 'ai-msg'}`;
+            const avatar = document.createElement('div'); avatar.className = 'avatar'; avatar.innerHTML = isUser ? '<i class="fas fa-user"></i>' : '<i class="fas fa-robot"></i>';
+            const bubble = document.createElement('div'); bubble.className = 'bubble'; bubble.innerHTML = text.replace(/\n/g,'<br>');
+            div.appendChild(avatar); div.appendChild(bubble); chatDiv.appendChild(div); chatDiv.scrollTop = chatDiv.scrollHeight;
+        };
+        askBtn.onclick = () => { const q = input.value.trim(); if(!q) return; addMsg(q, true); const ans = getScientificAnswer(q, currentDistance, getAltitudeByDistance(currentDistance)); addMsg(ans, false); input.value = ''; };
+        input.addEventListener('keypress', (e) => { if(e.key === 'Enter') askBtn.click(); });
+        document.querySelectorAll('.quick-tag').forEach(tag => tag.addEventListener('click', () => { input.value = tag.innerText; askBtn.click(); }));
+    }
+    
+    // 景点
+    function setupSpots() {
+        document.querySelectorAll('.spot-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const spot = btn.getAttribute('data-spot');
+                const answer = getScientificAnswer(spot, currentDistance, getAltitudeByDistance(currentDistance));
+                document.getElementById('spotDesc').innerHTML = `<i class="fas fa-info-circle"></i> ${spot}: ${answer}`;
+                const chatDiv = document.getElementById('chatMessages');
+                const addMsg = (text, isUser) => { const div=document.createElement('div'); div.className=`message ${isUser?'user-msg':'ai-msg'}`; const avatar=document.createElement('div'); avatar.className='avatar'; avatar.innerHTML=isUser?'<i class="fas fa-user"></i>':'<i class="fas fa-robot"></i>'; const bubble=document.createElement('div'); bubble.className='bubble'; bubble.innerHTML=text; div.appendChild(avatar); div.appendChild(bubble); chatDiv.appendChild(div); chatDiv.scrollTop=chatDiv.scrollHeight; };
+                addMsg(`🔍 查询地理标志: ${spot}`, false);
+                addMsg(answer, false);
+            });
+        });
+    }
+    
+    function setupPlanner() {
+        document.getElementById('calcPlan').addEventListener('click', () => {
+            let start = parseFloat(document.getElementById('planStart').value);
+            let end = parseFloat(document.getElementById('planEnd').value);
+            if(isNaN(start)) start=0; if(isNaN(end)) end=360;
+            start = Math.min(360, Math.max(0, start)); end = Math.min(360, Math.max(0, end));
+            let dist = Math.abs(end - start);
+            let hours = (dist / 50).toFixed(1);
+            let fuel = (dist * 0.1).toFixed(1);
+            document.getElementById('planResult').innerHTML = `📏 里程 ${dist} km | ⏱️ 约 ${hours} 小时 | ⛽ 油耗约 ${fuel} L (参考)`;
+        });
+    }
+    
+    function setupShare() {
+        document.getElementById('shareBtn').addEventListener('click', () => {
+            const alt = getAltitudeByDistance(currentDistance);
+            const veg = getVegetationByAltitude(alt).name;
+            const coord = getLonLat(currentDistance);
+            const geo = getGeoFeature(currentDistance).substring(0, 80);
+            const text = `独库公路 ${currentDistance.toFixed(1)} km · 海拔${Math.round(alt)}m · ${veg} · 坐标 ${coord.lat.toFixed(4)},${coord.lon.toFixed(4)} · ${geo}`;
+            navigator.clipboard.writeText(text).then(() => alert("点位信息已复制：" + text)).catch(()=>alert("手动复制失败"));
+        });
+    }
+    
+    window.addEventListener('load', () => {
+        init2DChart();
+        setupChat();
+        setupSpots();
+        setupPlanner();
+        setupShare();
+        const slider = document.getElementById('distanceSlider');
+        slider.addEventListener('input', (e) => refreshByDistance(parseFloat(e.target.value)));
+        refreshByDistance(125);
+    });
+</script>
+</body>
+</html>
